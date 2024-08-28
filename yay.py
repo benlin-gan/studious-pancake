@@ -39,13 +39,13 @@ def frappe_mmd_loss(probe_model, batch, label, sensitive, lambd=0.2):
     output = probe_model(batch)
     p_tuned = F.sigmoid(output)
     p_base = F.sigmoid(probe_model.unmodified_logit)
-    kl_loss = p_base * torch.log(p_base/p_tuned) + (1 - p_base) * torch.log((1 - p_base)/(1 - p_tuned)) # don't move too far from base model distribution (FRAPPE trick)
+    kl_loss = (p_base * torch.log(p_base/p_tuned) + (1 - p_base) * torch.log((1 - p_base)/(1 - p_tuned))).mean() # don't move too far from base model distribution (FRAPPE trick)
     fpns = output[~label & ~sensitive].unsqueeze(-1) #scores for majority group (with negative label)
     fps = output[~label & sensitive].unsqueeze(-1) #scores for minority group (with negative label) 
     N = min(fpns.shape[0], fps.shape[0])
     print(output, fpns, fps, label, sensitive)
     mmd_loss = mmd(fps[:N, :], fpns[:N, :]) #push distributions of fps and fpns together (equal opportunity - same outputs for both groups for one value of true label)
-    print("kl_loss=" + kl_loss, "mmd_loss=" + mmd_loss * lambd)
+    print(f"kl_loss={kl_loss.item()}", f"mmd_loss={(mmd_loss * lambd).item()}")
     return kl_loss + lambd * mmd_loss
 
 def mmd(x, y, alpha=-0.5):
@@ -73,24 +73,24 @@ def mmd(x, y, alpha=-0.5):
 
 def main():
     probe_model = Probe(base_model)
-    batch_generator = data.gen_batch('datasets/toxic_comments.csv', 'muslim', batch=5)
+    batch_generator = data.gen_batch('datasets/toxic_comments.csv', 'muslim', batch=10)
     num_epochs = 10
     optimizer = torch.optim.SGD(probe_model.parameters(), lr=0.001, momentum=0.9)
     for e in range(num_epochs):
         print(f"epoch {e}")
         running_loss = 0.0
         for batch_idx, (features, toxic, sensitive) in enumerate(batch_generator):
-            if not torch.any(~sensitive & ~toxic):
-                print(f"no nontoxic majority group examples, skipping batch {batch_idx}")
+            if torch.sum(~sensitive).item() < 2:
+                print(f"not enough nontoxic majority group examples, skipping batch {batch_idx}")
                 continue
-            if not torch.any(sensitive & ~toxic):
-                print(f"no nontoxic minority group examples, skipping batch {batch_idx}")
+            if torch.sum(sensitive).item() < 2:
+                print(f"not enough nontoxic minority group examples, skipping batch {batch_idx}")
                 continue
             #forward pass happens inside frappe_mmd_loss
             loss = frappe_mmd_loss(probe_model, features, toxic, sensitive)
             loss.backward()
             optimizer.step()
-            if i % 200 == 199:
+            if batch_idx % 200 == 199:
                 print('[%d, %5D] loss: %.3f' % (epoch + 1, i + 1, running_loss / 200))
                 running_loss = 0.0
 

@@ -10,6 +10,7 @@ def gen_point(path, sensitive_attribute, toxic_threshold):
         df = df[(df['split'] == 'train') & (~df[sensitive_attribute].isna())]
         df['sensitive'] = df[sensitive_attribute] > 0.0
         df['toxic'] = df["toxicity"] > toxic_threshold
+        df = df[~df['toxic']]
         op = df[['comment_text', 'toxic', 'sensitive']]
         for _, row in op.iterrows():
             yield(row)
