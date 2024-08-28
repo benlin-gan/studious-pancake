@@ -3,6 +3,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import numpy as np
+import data
 
 tokenizer = AutoTokenizer.from_pretrained("gpt2-large")
 base_model = AutoModel.from_pretrained("gpt2-large")
@@ -72,6 +73,10 @@ def mmd(x, y, alpha=-0.5):
 
 def main():
     probe_model = Probe(base_model)
+    dataset = data.gen_dataset('datasets/toxic_comments.csv', 'muslim')
+    num_epochs = 10
+    for e in range(num_epochs):
+        for batch_idx, (data, target) in enumerate
 input = tokenizer("no no no no", return_tensors='pt')['input_ids']
 print(input)
 print(a(input))
