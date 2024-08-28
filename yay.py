@@ -12,8 +12,6 @@ base_model = AutoModel.from_pretrained("gpt2-large")
 with torch.no_grad():
     default_probe = (base_model.wte.weight[8505] - base_model.wte.weight[3919])
 
-
-
 class Probe(torch.nn.Module): 
     def __init__(self, base_model):
         super(Probe, self).__init__()
@@ -73,10 +71,19 @@ def mmd(x, y, alpha=-0.5):
 
 def main():
     probe_model = Probe(base_model)
-    dataset = data.gen_dataset('datasets/toxic_comments.csv', 'muslim')
+    batch_generator = data.gen_batch('datasets/toxic_comments.csv', 'muslim')
     num_epochs = 10
+    optimizer = nn.optim.SGD(probe_model.parameters(), lr=0.001, momentum=0.9)
     for e in range(num_epochs):
-        for batch_idx, (data, target) in enumerate
-input = tokenizer("no no no no", return_tensors='pt')['input_ids']
-print(input)
-print(a(input))
+        running_loss = 0.0
+        for batch_idx, (features, toxic, sensitive) in enumerate(batch_generator):
+            #forward pass happens inside frappe_mmd_loss
+            loss = frappe_mmd_loss(probe_model, features, toxic, sensitive)
+            loss.backward()
+            optimizer.step()
+            if i % 200 == 199:
+                print('[%d, %5D] loss: %.3f' % (epoch + 1, i + 1, running_loss / 200))
+                running_loss = 0.0
+
+if __name__ == '__main__' : 
+    main()

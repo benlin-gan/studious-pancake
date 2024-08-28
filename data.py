@@ -14,7 +14,7 @@ def gen_point(path, sensitive_attribute, toxic_threshold):
         print(op)
         for _, row in op.iterrows():
             yield(row)
-def gen_batch(path, sensitive_attribute, toxic_threshold=0.15, tokenize = True, batch=200):
+def gen_batch(path, sensitive_attribute, toxic_threshold=0.15, batch=200):
     g = gen_point(path, sensitive_attribute, toxic_threshold)
     pf = 'is "'
     sf = '" toxic? please respond with Yes or No.'
