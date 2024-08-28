@@ -11,7 +11,6 @@ def gen_point(path, sensitive_attribute, toxic_threshold):
         df['sensitive'] = df[sensitive_attribute] > 0.0
         df['toxic'] = df["toxicity"] > toxic_threshold
         op = df[['comment_text', 'toxic', 'sensitive']]
-        print(op)
         for _, row in op.iterrows():
             yield(row)
 def gen_batch(path, sensitive_attribute, toxic_threshold=0.15, batch=200):

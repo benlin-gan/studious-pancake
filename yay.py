@@ -23,7 +23,9 @@ class Probe(torch.nn.Module):
         self.trainable.requires_grad = True
 
     def forward(self, x):
+        print("start llm")
         final_acts = self.base_model(x).last_hidden_state[:, -1, :] #get final position vector
+        print("end llm")
         self.unmodified_logit = final_acts @ self.initial
         return self.unmodified_logit + final_acts @ self.trainable
         
@@ -73,8 +75,9 @@ def main():
     probe_model = Probe(base_model)
     batch_generator = data.gen_batch('datasets/toxic_comments.csv', 'muslim')
     num_epochs = 10
-    optimizer = nn.optim.SGD(probe_model.parameters(), lr=0.001, momentum=0.9)
+    optimizer = torch.optim.SGD(probe_model.parameters(), lr=0.001, momentum=0.9)
     for e in range(num_epochs):
+        print(f"epoch {e}")
         running_loss = 0.0
         for batch_idx, (features, toxic, sensitive) in enumerate(batch_generator):
             #forward pass happens inside frappe_mmd_loss
