@@ -30,16 +30,27 @@ def roc(df, name):
     plt.title(name)
     os.makedirs('tmp', exist_ok=True)
     plt.savefig(f"tmp/{'_'.join(name.split(' '))}.png")
+def auc(df):
+    df['negs_below'] = (~df.toxic[::-1]).cumsum()[::-1]
+    numerator = df[df.toxic].negs_below.sum()
+    denominator = df.toxic.sum() * (~df.toxic).sum()
+    return numerator/denominator
 
 def main():
     ids = ['male','female','homosexual_gay_or_lesbian', 'christian','jewish', 'muslim','black','white', 'psychiatric_or_mental_illness']
+    x = []
     for i in ids:
         df = gen('zs.csv', i);
         print(f'generated {i}')
-        roc(sensitive_only(df), f"{i} only roc curve")
-        roc(bnsp(df), f"{i} bnsp roc curve")
-        roc(bpsn(df), f"{i} bpsn roc curve")
+        x += [(auc(sensitive_only(df)), auc(bnsp(df)), auc(bpsn(df)))]
+        #roc(sensitive_only(df), f"{i} only roc curve")
+        #roc(bnsp(df), f"{i} bnsp roc curve")
+        #roc(bpsn(df), f"{i} bpsn roc curve")
         print(f'graphed {i}')
+    df = pd.DataFrame(x)
+    df.index = ids
+    df.columns = ['sensitive_only', 'bnsp', 'bpsn']
+    print(df)
 
 if __name__ == '__main__':
     main()
